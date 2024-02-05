@@ -12,7 +12,6 @@ const char* password = "17969564294078586789";
 //Impostazioni MQTT
 const char* mqtt_server = "cec9083493024ef58ce2c2cd6a476130.s2.eu.hivemq.cloud";
 const int mqtt_port = 8883;
-const int mqtt_socket = 8884;
 
 //Credenziali MQTT
 const char* mqtt_username = "tommyUnibo";
@@ -327,7 +326,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
   <div class="balloon">
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <dotlottie-player src="https://lottie.host/fb8cbfd0-ac65-4d81-9e32-2b0fdbb34291/54JiYD0JcZ.json" background="transparent" speed="1" style="width: 550px; height: 550px" direction="1" mode="normal" loop autoplay></dotlottie-player>
+    <dotlottie-player src="https://lottie.host/fb8cbfd0-ac65-4d81-9e32-2b0fdbb34291/54JiYD0JcZ.json" background="transparent" speed="1" style="width: 350px; height: 350px" direction="1" mode="normal" loop autoplay></dotlottie-player>
   </div>
 </body>
 <script>
@@ -404,13 +403,13 @@ void setup_wifi() {
 
 //Definizione di funzione di connessione MQTT
 void reconnect() {
-  // Loop until we’re reconnected
+  // Loop finche non ci si connette
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    String clientId = "ESP32Client-"; // Create a random client ID
+    String clientId = "ESP32Client-"; // Creazione random client ID
     clientId += String(random(0xffff), HEX);
     
-    // Attempt to connect
+    // Tentativo di connessione ai topic mqtt
     if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
       client.subscribe(mqtt_temp_topic);
@@ -442,7 +441,7 @@ void handleHum() {
 }
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
-//Dichiarazione delle ROUTES einizializzazione server
+//Dichiarazione delle ROUTES e inizializzazione server
 void setupRouting() {
   server.on("/", handleHome);
   server.on("/temperature", handleTemp);
@@ -453,7 +452,7 @@ void setupRouting() {
 
 //Setup
 void setup() {
-  configTime(0, 0, "pool.ntp.org");   // get UTC time via NTP
+  configTime(0, 0, "pool.ntp.org");   // configurazione del tempo di esecuzione UTC tramite Network Time Protocol
   espClient.setTrustAnchors(&cert);      // Add root certificate for api.telegram.org
 
   Serial.begin(9600);
@@ -464,7 +463,7 @@ void setup() {
 }
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
-//Loop
+//Loop Infinito
 void loop() {
   if (!client.connected()) {
     reconnect();
@@ -475,7 +474,7 @@ void loop() {
   //Lettura temperatura
   float newTemp = dht.readTemperature();
   if(isnan(newTemp)) {
-    Serial.println("Fallimento nella lettura del sensore DHT22 (temperatura)");
+    Serial.println("/// Fallimento nella lettura del sensore DHT22 (temperatura)");
   }else{
     standardTemp = newTemp;
     // Serial.println(standardTemp);
@@ -485,7 +484,7 @@ void loop() {
   //Lettura Umidità
   float newHum = dht.readHumidity();
   if(isnan(newHum)) {
-    Serial.println("Fallimento nella lettura del sensore DHT22 (umidità)");
+    Serial.println("/// Fallimento nella lettura del sensore DHT22 (umidità)");
   }else{
     standardHum = newHum;
     // Serial.println(standardHum);
