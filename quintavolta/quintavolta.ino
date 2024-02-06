@@ -22,7 +22,7 @@ const char* mqtt_temp_topic = "tempTopic";
 const char* mqtt_hum_topic = "humTopic";
 
 //Impostazioni Sensore Temperatura/Umidità
-#define DHTPIN 5 //GPIO 5 Digital port 1
+#define DHTPIN 5  //GPIO 5 Digital port 1
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -32,8 +32,8 @@ float standardHum = 0.0;
 
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
-//Certificato per client WiFi Secure
-static const char *root_ca PROGMEM = R"EOF(
+//Certificato per BearSSL di WiFiClientSecure
+static const char* root_ca PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
 TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
@@ -83,12 +83,26 @@ const char index_html[] PROGMEM = R"rawliteral(
   <meta charset="UTF-8">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+  <script type="text/javascript" src="date.js"></script>
   <style>
     @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap");
 
     * {
         font-family: "Montserrat", sans-serif;
         user-select: none;
+    }
+
+    @media only screen and (max-width: 1430px) {
+      dotlottie-player {
+        display: none;
+      }
+    }
+
+    @media only screen and (min-width: 1431px) {
+      dotlottie-player{
+        display: block;
+      }
     }
 
     html {
@@ -98,6 +112,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         padding: 0;
         height: 100%;
         overflow-x: hidden;
+        overflow-y: auto;
         scroll-behavior: smooth;
     }
 
@@ -213,15 +228,11 @@ const char index_html[] PROGMEM = R"rawliteral(
     .balloon{
       display: block;
       position: absolute;
-      top: 25%;
+      top: 30%;
       right: 10%;
       transition: all 0.3s ease-in-out;
     }
-
-    .balloon:hover {
-      transform: scale(1.2, 1.2);
-    }
-
+    
     .temperatura, .umidita {
       color: white;
       font-size: 2.2em;
@@ -250,9 +261,13 @@ const char index_html[] PROGMEM = R"rawliteral(
       display: inline-flex;
     }
     
-    .libraries>p, .devices>p {
+    .libraries>p, .devices>p, .mqtt>p {
       margin: 0;
       font-weight: bold;
+    }
+
+    .mqtt{
+      margin-left: 30px;
     }
 
     .btn {
@@ -271,63 +286,72 @@ const char index_html[] PROGMEM = R"rawliteral(
 </style>
 </head>
 <body>
-  <div class="header container-md container-fluid">
-    <div class="title">
-      <h2><span class="server">DHT22 | <span class="hover-temp">Temperatura</span> & <span class="hover-hum">Umidità</span></h2>
-      <hr>
-      <div class="menu">
-        <h4 class="btn btn-outline-light">Web Server</span></h4>
-        <div class="tooltip">
-          <div class="libraries">
-            <p>Librerie Utilizzate:</p>
-            <ul>
-              <li>ESP8266WiFi</li>
-              <li>WiFiClientSecure</li>
-              <li>PubSubClient</li>
-              <li>ESP8266WebServer</li>
-              <li>DHT</li>
-            </ul>
-          </div>
-          <div class="devices">
-            <p>Dispositivi:</p>
-            <ul>
-              <li>ESP8266</li>
-              <li>DHT22</li>
-            </ul>
+  <header>
+    <div class="header container-md container-fluid">
+      <div class="title">
+        <h2><span class="server">DHT22 | <span class="hover-temp">Temperatura</span> & <span class="hover-hum">Umidità</span></h2>
+        <hr>
+        <div class="menu">
+          <h4 class="btn btn-outline-light">Web Server</span></h4>
+          <div class="tooltip">
+            <div class="libraries">
+              <p>Librerie Utilizzate:</p>
+              <ul>
+                <li>ESP8266WiFi</li>
+                <li>WiFiClientSecure</li>
+                <li>PubSubClient</li>
+                <li>ESP8266WebServer</li>
+                <li>DHT</li>
+              </ul>
+            </div>
+            <div class="devices">
+              <p>Dispositivi:</p>
+              <ul>
+                <li>ESP8266</li>
+                <li>DHT22</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-      </div>
-    <div class="profile">
-      <p class="name">Bagnolini Tommaso</p>
-      <p class="email">tommaso.bagnolini@studio.unibo.it</p>
-      <p class="matricola">Mat.: 0001071116</p>
-    </div>
-  </div>
-  <div class="content">
-    <div class="measurements">
-      <div class="temperatura">
-        <p>
-          <i class="fas fa-thermometer-half" style="color: rgb(255, 255, 255)"></i> 
-          <span class="dht-labels temp">Temperatura:</span> 
-          <span id="temperature">%TEMPERATURE%</span>
-          <sup class="units">°C</sup>
-        </p>
-      </div>
-      <div class="umidita">
-        <p>
-          <i class="fas fa-tint" style="color:#ffffff;"></i> 
-          <span class="dht-labels hum">Umidità:</span>
-          <span id="humidity">%HUMIDITY%</span>
-          <sup class="units">%</sup>
-        </p>
+      <div class="profile">
+        <p class="name">Bagnolini Tommaso</p>
+        <p class="email">tommaso.bagnolini@studio.unibo.it</p>
+        <p class="matricola">Mat.: 0001071116</p>
       </div>
     </div>
-  </div>
-  <div class="balloon">
-    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <dotlottie-player src="https://lottie.host/fb8cbfd0-ac65-4d81-9e32-2b0fdbb34291/54JiYD0JcZ.json" background="transparent" speed="1" style="width: 350px; height: 350px" direction="1" mode="normal" loop autoplay></dotlottie-player>
-  </div>
+  </header>
+  <main>
+    <div class="content">
+      <div class="measurements">
+        <div class="temperatura">
+          <p>
+            <i class="fas fa-thermometer-half" style="color: rgb(255, 255, 255)"></i> 
+            <span class="dht-labels temp">Temperatura:</span> 
+            <span id="temperature">%TEMPERATURE%</span>
+            <sup class="units">°C</sup>
+          </p>
+        </div>
+        <div class="umidita">
+          <p>
+            <i class="fas fa-tint" style="color:#ffffff;"></i> 
+            <span class="dht-labels hum">Umidità:</span>
+            <span id="humidity">%HUMIDITY%</span>
+            <sup class="units">%</sup>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="balloon">
+      <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+      <dotlottie-player src="https://lottie.host/fb8cbfd0-ac65-4d81-9e32-2b0fdbb34291/54JiYD0JcZ.json" background="transparent" speed="1" style="width: 450px; height: 450px" direction="1" mode="normal" loop autoplay></dotlottie-player>
+    </div>
+  </main>
+  <section>
+    <div class="graph">
+      <canvas id="myChart" style="width:120%;max-width:600px"></canvas>
+    </div>
+  </section>
 </body>
 <script>
 setInterval(function ( ) {
@@ -356,11 +380,10 @@ setInterval(function ( ) {
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
 //Funzione per la sostituzione e visualizzazione dati nella pagina HTML
-String processor(const String& var){
-  if(var == "TEMPERATURE"){
+String processor(const String& var) {
+  if (var == "TEMPERATURE") {
     return String(standardTemp);
-  }
-  else if(var == "HUMIDITY"){
+  } else if (var == "HUMIDITY") {
     return String(standardHum);
   }
   return String();
@@ -374,7 +397,7 @@ ESP8266WebServer server(80);
 //Definizione di funzione di connessione WiFi
 void setup_wifi() {
   delay(10);
-  
+
   dht.begin();
 
   Serial.println();
@@ -406,15 +429,15 @@ void reconnect() {
   // Loop finche non ci si connette
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    String clientId = "ESP32Client-"; // Creazione random client ID
+    String clientId = "ESP8266_Client-";  // Creazione random client ID
     clientId += String(random(0xffff), HEX);
-    
+
     // Tentativo di connessione ai topic mqtt
     if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
       client.subscribe(mqtt_temp_topic);
       client.subscribe(mqtt_hum_topic);
-    }else {
+    } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
@@ -452,11 +475,11 @@ void setupRouting() {
 
 //Setup
 void setup() {
-  configTime(0, 0, "pool.ntp.org");   // configurazione del tempo di esecuzione UTC tramite Network Time Protocol
-  espClient.setTrustAnchors(&cert);      // Add root certificate for api.telegram.org
+  configTime(0, 0, "pool.ntp.org");  // configurazione del tempo di esecuzione UTC tramite Network Time Protocol
+  espClient.setTrustAnchors(&cert);
 
   Serial.begin(9600);
-  
+
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
   setupRouting();
@@ -473,9 +496,9 @@ void loop() {
 
   //Lettura temperatura
   float newTemp = dht.readTemperature();
-  if(isnan(newTemp)) {
+  if (isnan(newTemp)) {
     Serial.println("/// Fallimento nella lettura del sensore DHT22 (temperatura)");
-  }else{
+  } else {
     standardTemp = newTemp;
     // Serial.println(standardTemp);
     client.publish(mqtt_temp_topic, String(standardTemp).c_str());
@@ -483,13 +506,13 @@ void loop() {
 
   //Lettura Umidità
   float newHum = dht.readHumidity();
-  if(isnan(newHum)) {
+  if (isnan(newHum)) {
     Serial.println("/// Fallimento nella lettura del sensore DHT22 (umidità)");
-  }else{
+  } else {
     standardHum = newHum;
     // Serial.println(standardHum);
     client.publish(mqtt_hum_topic, String(standardHum).c_str());
   }
 
-  delay(5000); // Ritardo prima di inviare nuovamente i dati  
+  delay(5000);  // Ritardo prima di inviare nuovamente i dati
 }
