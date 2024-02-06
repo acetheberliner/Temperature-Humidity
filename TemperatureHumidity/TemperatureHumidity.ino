@@ -8,6 +8,8 @@
 //Impostazioni wiFi
 const char* ssid = "FRITZ - 2.4 GHz";
 const char* password = "17969564294078586789";
+// const char* ssid = "iPhone di Tommaso";
+// const char* password = "Tommaso03";
 
 //Impostazioni MQTT
 const char* mqtt_server = "cec9083493024ef58ce2c2cd6a476130.s2.eu.hivemq.cloud";
