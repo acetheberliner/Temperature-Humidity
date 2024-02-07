@@ -1,4 +1,3 @@
-#include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
@@ -403,7 +402,7 @@ void setup_wifi() {
   dht.begin();
 
   Serial.println();
-  Serial.print("Connecting to ");
+  Serial.print("Connessione a ");
   Serial.println(ssid);
 
   WiFi.begin(ssid, password);
@@ -414,8 +413,8 @@ void setup_wifi() {
   }
 
   Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.println("[ WiFi Connesso ]");
+  Serial.print("Indirizzo IP: ");
   Serial.println(WiFi.localIP());
 
   // Serial.println("\nValori debug: ");
@@ -430,19 +429,19 @@ void setup_wifi() {
 void reconnect() {
   // Loop finche non ci si connette
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.print("Tentativo di connessione MQTT: ");
     String clientId = "ESP8266_Client-";  // Creazione random client ID
     clientId += String(random(0xffff), HEX);
 
     // Tentativo di connessione ai topic mqtt
     if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("connected");
+      Serial.println(" [ CONNESSO ]");
       client.subscribe(mqtt_temp_topic);
       client.subscribe(mqtt_hum_topic);
     } else {
-      Serial.print("failed, rc=");
+      Serial.print(" [ DISCONNESSO ], codice errore=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(", nuovo tentativo in 5 secondi");
       delay(5000);
     }
   }
